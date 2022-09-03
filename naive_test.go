@@ -13,21 +13,21 @@ func TestMaximalIndependentSet(t *testing.T) {
 		want    []NodeID
 		wantErr bool
 	}{
-		// {
-		// 	name: "empty",
-		// 	in:   []byte(``),
-		// 	want: []NodeID{},
-		// },
+		{
+			name: "empty",
+			in:   []byte(``),
+			want: []NodeID{},
+		},
 		{
 			name: "simple",
 			in:   []byte(`DQc`),
-			want: []NodeID{},
+			want: []NodeID{1, 2, 4},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ImportG6(tt.in).MaximumIndependentSet()
-			assert.Equal(t, tt.want, got)
+			assert.ElementsMatch(t, tt.want, got)
 		})
 	}
 }
