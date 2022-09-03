@@ -10,8 +10,8 @@ import (
 
 func ExampleGraph() {
 	g := graph.New[int, int](false)
-	id := g.AddNode(1)
-	id2 := g.AddNode(2)
+	id := g.AddNode(graph.NodeID(1), 1)
+	id2 := g.AddNode(graph.NodeID(2), 2)
 	g.AddEdge(id, id2, 1)
 	g.AddEdge(id2, id, 1)
 	fmt.Println(g.Node(id))
@@ -37,11 +37,11 @@ func TestImportG6(t *testing.T) {
 			b:    []byte(`DQc`),
 			want: func() *graph.Graph[int, int] {
 				g := graph.New[int, int](false)
-				g.AddNode(0)
-				g.AddNode(1)
-				g.AddNode(2)
-				g.AddNode(3)
-				g.AddNode(4)
+				g.AddNode(graph.NodeID(0), 0)
+				g.AddNode(graph.NodeID(1), 1)
+				g.AddNode(graph.NodeID(2), 2)
+				g.AddNode(graph.NodeID(3), 3)
+				g.AddNode(graph.NodeID(4), 4)
 				g.AddEdge(0, 2, 1)
 				g.AddEdge(0, 4, 1)
 				g.AddEdge(1, 3, 1)

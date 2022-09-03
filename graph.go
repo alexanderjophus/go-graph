@@ -14,7 +14,6 @@ type Number interface {
 type Graph[T any, N Number] struct {
 	nodes    map[NodeID]*node[T, N]
 	directed bool
-	nextID   NodeID
 	lock     sync.RWMutex
 }
 
@@ -36,7 +35,6 @@ func New[T any, N Number](directed bool) *Graph[T, N] {
 	return &Graph[T, N]{
 		nodes:    make(map[NodeID]*node[T, N]),
 		directed: directed,
-		nextID:   0,
 		lock:     sync.RWMutex{},
 	}
 }
@@ -51,7 +49,7 @@ func ImportG6(b []byte) *Graph[int, int] {
 	// decode number of nodes in graph
 	n := int(b[0] - 63)
 	for i := 0; i < n; i++ {
-		g.AddNode(i)
+		g.AddNode(NodeID(i), i)
 	}
 
 	n1, n2 := 0, 1
@@ -94,11 +92,9 @@ func (g *Graph[T, N]) NodeIDs() []NodeID {
 	return ids
 }
 
-func (g *Graph[T, N]) AddNode(nodeData T) NodeID {
+func (g *Graph[T, N]) AddNode(id NodeID, nodeData T) NodeID {
 	g.lock.Lock()
 	defer g.lock.Unlock()
-	id := NodeID(g.nextID)
-	g.nextID++
 	g.nodes[id] = &node[T, N]{
 		Value:    nodeData,
 		id:       id,
@@ -179,6 +175,11 @@ func (g *Graph[T, N]) hasNeighbour(id, neighbor NodeID) bool {
 
 	node := g.nodes[id]
 	for _, edge := range node.edgesOut {
+		if edge.end.id == neighbor {
+			return true
+		}
+	}
+	for _, edge := range node.edgesIn {
 		if edge.end.id == neighbor {
 			return true
 		}

@@ -16,17 +16,21 @@ func maximumIndependentSet[T any, N Number](g *Graph[T, N]) []NodeID {
 	}
 
 	if len(g.nodes) == 1 {
-		return []NodeID{g.nodes[0].id}
+		for _, node := range g.nodes {
+			return []NodeID{node.id}
+		}
 	}
 
 	mis := []NodeID{}
 	// for each node in G
-	// for _, node := range g.nodes {
-	// 	// remove node from G
-	// 	g1 := newGraphWithoutNode[T, N](g, node.id)
-
-	// 	g2 := newGraphWithoutNodeAndNeighbours[T, N](g, node.id)
-	// }
+	for _, node := range g.nodes {
+		g1 := newGraphWithoutNodeAndNeighbours(g, node.id)
+		g2 := newGraphWithoutNode(g, node.id)
+		m := max(
+			append(maximumIndependentSet(g1), node.id),
+			maximumIndependentSet(g2))
+		mis = max(m, mis)
+	}
 	return mis
 }
 
@@ -34,7 +38,7 @@ func newGraphWithoutNode[T any, N Number](g *Graph[T, N], nodeID NodeID) *Graph[
 	newGraph := New[T, N](g.directed)
 	for _, node := range g.nodes {
 		if node.id != nodeID {
-			newGraph.AddNode(node.Value)
+			newGraph.AddNode(node.id, node.Value)
 		}
 	}
 	for _, node := range g.nodes {
@@ -51,7 +55,7 @@ func newGraphWithoutNodeAndNeighbours[T any, N Number](g *Graph[T, N], nodeID No
 	newGraph := New[T, N](g.directed)
 	for _, node := range g.nodes {
 		if !g.isNodeOrNeighbour(nodeID, node.id) {
-			newGraph.AddNode(node.Value)
+			newGraph.AddNode(node.id, node.Value)
 		}
 	}
 	for _, node := range g.nodes {
