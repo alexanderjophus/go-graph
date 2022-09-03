@@ -16,8 +16,6 @@ type Graph[T any, N Number] struct {
 	directed bool
 	nextID   NodeID
 	lock     sync.RWMutex
-
-	misNodes []NodeID
 }
 
 type NodeID int
@@ -40,7 +38,6 @@ func New[T any, N Number](directed bool) *Graph[T, N] {
 		directed: directed,
 		nextID:   0,
 		lock:     sync.RWMutex{},
-		misNodes: make([]NodeID, 0),
 	}
 }
 
@@ -99,6 +96,7 @@ func (g *Graph[T, N]) NodeIDs() []NodeID {
 
 func (g *Graph[T, N]) AddNode(nodeData T) NodeID {
 	g.lock.Lock()
+	defer g.lock.Unlock()
 	id := NodeID(g.nextID)
 	g.nextID++
 	g.nodes[id] = &node[T, N]{
@@ -107,7 +105,6 @@ func (g *Graph[T, N]) AddNode(nodeData T) NodeID {
 		edgesOut: make(map[NodeID]*edge[T, N]),
 		edgesIn:  make(map[NodeID]*edge[T, N]),
 	}
-	g.lock.Unlock()
 	return id
 }
 
@@ -174,6 +171,19 @@ func (g *Graph[T, N]) Neighbors(id NodeID) []NodeID {
 		neighbors = append(neighbors, edge.end.id)
 	}
 	return neighbors
+}
+
+func (g *Graph[T, N]) hasNeighbour(id, neighbor NodeID) bool {
+	g.lock.RLock()
+	defer g.lock.RUnlock()
+
+	node := g.nodes[id]
+	for _, edge := range node.edgesOut {
+		if edge.end.id == neighbor {
+			return true
+		}
+	}
+	return false
 }
 
 // errors
