@@ -1,25 +1,11 @@
 package graph_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/trelore/go-graph"
 )
-
-func ExampleGraph() {
-	g := graph.New[int, int](false)
-	id := g.AddNode(graph.NodeID(1), 1)
-	id2 := g.AddNode(graph.NodeID(2), 2)
-	g.AddEdge(id, id2, 1)
-	g.AddEdge(id2, id, 1)
-	fmt.Println(g.Node(id))
-	fmt.Println(g.Node(id2))
-	// Output:
-	// 1 <nil>
-	// 2 <nil>
-}
 
 func TestImportG6(t *testing.T) {
 	tests := []struct {

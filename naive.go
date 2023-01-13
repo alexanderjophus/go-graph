@@ -22,7 +22,6 @@ func maximumIndependentSet[T any, N Number](g *Graph[T, N]) []NodeID {
 	}
 
 	mis := []NodeID{}
-	// for each node in G
 	for _, node := range g.nodes {
 		g1 := newGraphWithoutNodeAndNeighbours(g, node.id)
 		g2 := newGraphWithoutNode(g, node.id)

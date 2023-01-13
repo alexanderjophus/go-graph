@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 
@@ -12,9 +13,10 @@ type Number interface {
 }
 
 type Graph[T any, N Number] struct {
+	sync.RWMutex
+
 	nodes    map[NodeID]*node[T, N]
 	directed bool
-	lock     sync.RWMutex
 }
 
 type NodeID int
@@ -35,7 +37,6 @@ func New[T any, N Number](directed bool) *Graph[T, N] {
 	return &Graph[T, N]{
 		nodes:    make(map[NodeID]*node[T, N]),
 		directed: directed,
-		lock:     sync.RWMutex{},
 	}
 }
 
@@ -72,8 +73,8 @@ func ImportG6(b []byte) *Graph[int, int] {
 }
 
 func (g *Graph[T, N]) Node(id NodeID) (T, error) {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
+	g.RLock()
+	defer g.RUnlock()
 	var value T
 	if node, exists := g.nodes[id]; !exists {
 		return value, ErrNodeNotFound(id)
@@ -83,8 +84,8 @@ func (g *Graph[T, N]) Node(id NodeID) (T, error) {
 }
 
 func (g *Graph[T, N]) NodeIDs() []NodeID {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
+	g.RLock()
+	defer g.RUnlock()
 	ids := make([]NodeID, 0)
 	for _, n := range g.nodes {
 		ids = append(ids, n.id)
@@ -93,8 +94,8 @@ func (g *Graph[T, N]) NodeIDs() []NodeID {
 }
 
 func (g *Graph[T, N]) AddNode(id NodeID, nodeData T) NodeID {
-	g.lock.Lock()
-	defer g.lock.Unlock()
+	g.Lock()
+	defer g.Unlock()
 	g.nodes[id] = &node[T, N]{
 		Value:    nodeData,
 		id:       id,
@@ -105,8 +106,8 @@ func (g *Graph[T, N]) AddNode(id NodeID, nodeData T) NodeID {
 }
 
 func (g *Graph[T, N]) RemoveNode(id NodeID) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
+	g.Lock()
+	defer g.Unlock()
 	_, exists := g.nodes[id]
 	if !exists {
 		return ErrNodeNotFound(id)
@@ -120,8 +121,8 @@ func (g *Graph[T, N]) RemoveNode(id NodeID) error {
 }
 
 func (g *Graph[T, N]) AddEdge(startNodeID, endNodeID NodeID, weight N) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
+	g.Lock()
+	defer g.Unlock()
 	startNode, exists := g.nodes[startNodeID]
 	if !exists {
 		return ErrNodeNotFound(startNodeID)
@@ -142,8 +143,8 @@ func (g *Graph[T, N]) AddEdge(startNodeID, endNodeID NodeID, weight N) error {
 }
 
 func (g *Graph[T, N]) RemoveEdge(startNodeID, endNodeID NodeID) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
+	g.Lock()
+	defer g.Unlock()
 	startNode, exists := g.nodes[startNodeID]
 	if !exists {
 		return ErrNodeNotFound(startNodeID)
@@ -157,30 +158,45 @@ func (g *Graph[T, N]) RemoveEdge(startNodeID, endNodeID NodeID) error {
 	return nil
 }
 
-func (g *Graph[T, N]) Neighbors(id NodeID) []NodeID {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
+func (g *Graph[T, N]) Neighbours(id NodeID) []NodeID {
+	g.RLock()
+	defer g.RUnlock()
 
-	neighbors := make([]NodeID, 0)
+	neighbours := make([]NodeID, 0)
 	node := g.nodes[id]
 	for _, edge := range node.edgesOut {
-		neighbors = append(neighbors, edge.end.id)
+		neighbours = append(neighbours, edge.end.id)
 	}
-	return neighbors
+	return neighbours
 }
 
-func (g *Graph[T, N]) hasNeighbour(id, neighbor NodeID) bool {
-	g.lock.RLock()
-	defer g.lock.RUnlock()
+func (g *Graph[T, N]) ExportDot() []byte {
+	g.RLock()
+	defer g.RUnlock()
+
+	var buf bytes.Buffer
+	buf.WriteString("digraph {\n")
+	for _, node := range g.nodes {
+		for _, edge := range node.edgesOut {
+			buf.WriteString(fmt.Sprintf("\t%d -> %d [label=%v];\n", node.id, edge.end.id, edge.weight))
+		}
+	}
+	buf.WriteString("}\n")
+	return buf.Bytes()
+}
+
+func (g *Graph[T, N]) hasNeighbour(id, neighbour NodeID) bool {
+	g.RLock()
+	defer g.RUnlock()
 
 	node := g.nodes[id]
 	for _, edge := range node.edgesOut {
-		if edge.end.id == neighbor {
+		if edge.end.id == neighbour {
 			return true
 		}
 	}
 	for _, edge := range node.edgesIn {
-		if edge.end.id == neighbor {
+		if edge.end.id == neighbour {
 			return true
 		}
 	}
