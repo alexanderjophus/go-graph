@@ -6,6 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkMaximalIndependentSet(b *testing.B) {
+	g := ImportG6([]byte("DQc"))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g.MaximumIndependentSet()
+	}
+}
+
 func TestMaximalIndependentSet(t *testing.T) {
 	tests := []struct {
 		name    string
