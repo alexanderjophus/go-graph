@@ -23,7 +23,7 @@ type NodeID int
 
 type node[T any, N Number] struct {
 	Value    T
-	id       NodeID
+	ID       NodeID
 	edgesOut map[NodeID]*edge[T, N]
 	edgesIn  map[NodeID]*edge[T, N]
 }
@@ -40,6 +40,7 @@ func New[T any, N Number](directed bool) *Graph[T, N] {
 	}
 }
 
+// for interesting graphs visit https://houseofgraphs.org/
 func ImportG6(b []byte) *Graph[int, int] {
 	g := New[int, int](false)
 
@@ -72,14 +73,13 @@ func ImportG6(b []byte) *Graph[int, int] {
 	return g
 }
 
-func (g *Graph[T, N]) Node(id NodeID) (T, error) {
+func (g *Graph[T, N]) Node(id NodeID) (*node[T, N], error) {
 	g.RLock()
 	defer g.RUnlock()
-	var value T
 	if node, exists := g.nodes[id]; !exists {
-		return value, ErrNodeNotFound(id)
+		return nil, ErrNodeNotFound(id)
 	} else {
-		return node.Value, nil
+		return node, nil
 	}
 }
 
@@ -88,7 +88,7 @@ func (g *Graph[T, N]) NodeIDs() []NodeID {
 	defer g.RUnlock()
 	ids := make([]NodeID, 0)
 	for _, n := range g.nodes {
-		ids = append(ids, n.id)
+		ids = append(ids, n.ID)
 	}
 	return ids
 }
@@ -98,7 +98,7 @@ func (g *Graph[T, N]) AddNode(id NodeID, nodeData T) NodeID {
 	defer g.Unlock()
 	g.nodes[id] = &node[T, N]{
 		Value:    nodeData,
-		id:       id,
+		ID:       id,
 		edgesOut: make(map[NodeID]*edge[T, N]),
 		edgesIn:  make(map[NodeID]*edge[T, N]),
 	}
@@ -165,7 +165,15 @@ func (g *Graph[T, N]) Neighbours(id NodeID) []NodeID {
 	neighbours := make([]NodeID, 0)
 	node := g.nodes[id]
 	for _, edge := range node.edgesOut {
-		neighbours = append(neighbours, edge.end.id)
+		neighbours = append(neighbours, edge.end.ID)
+	}
+	return neighbours
+}
+
+func (n *node[T, N]) Neighbours() []*node[T, N] {
+	neighbours := make([]*node[T, N], 0)
+	for _, edge := range n.edgesOut {
+		neighbours = append(neighbours, edge.end)
 	}
 	return neighbours
 }
@@ -178,7 +186,7 @@ func (g *Graph[T, N]) ExportDot() []byte {
 	buf.WriteString("digraph {\n")
 	for _, node := range g.nodes {
 		for _, edge := range node.edgesOut {
-			buf.WriteString(fmt.Sprintf("\t%d -> %d [label=%v];\n", node.id, edge.end.id, edge.weight))
+			buf.WriteString(fmt.Sprintf("\t%d -> %d [label=%v];\n", node.ID, edge.end.ID, edge.weight))
 		}
 	}
 	buf.WriteString("}\n")
@@ -191,12 +199,12 @@ func (g *Graph[T, N]) hasNeighbour(id, neighbour NodeID) bool {
 
 	node := g.nodes[id]
 	for _, edge := range node.edgesOut {
-		if edge.end.id == neighbour {
+		if edge.end.ID == neighbour {
 			return true
 		}
 	}
 	for _, edge := range node.edgesIn {
-		if edge.end.id == neighbour {
+		if edge.end.ID == neighbour {
 			return true
 		}
 	}

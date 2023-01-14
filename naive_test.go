@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkMaximalIndependentSet(b *testing.B) {
-	g := ImportG6([]byte("DQc"))
+	g := ImportG6([]byte("DD["))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g.MaximumIndependentSet()

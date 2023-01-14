@@ -11,3 +11,5 @@ go run example/main.go DQc
 ```
 
 Where `DQc` is the g6 representation of the graph you want to find MIS for.
+
+To find g6 formats of interesting graphs, try [house of graphs](https://houseofgraphs.org/).
